@@ -1,7 +1,7 @@
 # Blockchain Transaction Processor
 
 <p align="center">
-  <img src="https://ethereum.org/static/4f10d2777b2d14759feb01c65b2765f7/69ce7/eth-logo.webp" alt="Ethereum" width="100" />
+  <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png?v=033" alt="Ethereum" width="100" />
   <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" alt="Binance Smart Chain" width="100" />
   <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana" width="100" />
 </p>
