@@ -1,7 +1,10 @@
 import Web3 from "web3";
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 class BinanceSmartChain {
-  private isTestnet: boolean = true;
+  private isTestnet: boolean;
   protected web3Clients: Web3[];
   protected currentClientIndex: number;
 
@@ -14,15 +17,21 @@ class BinanceSmartChain {
     USDT: "0x337610d27c682E347C9cD60BD4b3b107C9d34dDd"
   };
 
-  private tokenContracts = this.isTestnet
-    ? this.testnetTokenContracts
-    : this.mainnetTokenContracts;
+  private tokenContracts: { [key: string]: string };
 
-  constructor() {
-    this.web3Clients = this.isTestnet
-      ? [new Web3("https://data-seed-prebsc-1-s1.binance.org:8545/")]
-      : [new Web3("https://bsc-dataseed.binance.org/")];
+  constructor(isTestnet: boolean = true) {
+    this.isTestnet = isTestnet;
+    this.tokenContracts = this.isTestnet ? this.testnetTokenContracts : this.mainnetTokenContracts;
+    this.web3Clients = this.initializeWeb3Clients();
     this.currentClientIndex = 0;
+  }
+
+  private initializeWeb3Clients(): Web3[] {
+    const bscRpcUrl = this.isTestnet
+      ? process.env.BSC_TESTNET_RPC_URL || "https://data-seed-prebsc-1-s1.binance.org:8545/"
+      : process.env.BSC_MAINNET_RPC_URL || "https://bsc-dataseed.binance.org/";
+
+    return [new Web3(bscRpcUrl)];
   }
 
   async getWeb3Client(): Promise<Web3> {

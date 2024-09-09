@@ -1,8 +1,12 @@
 import Web3 from "web3";
 import { Web3Eth } from "web3";
+import dotenv from 'dotenv';
+import { updateBlockProgress, updateWalletCount, incrementTransactionCount } from "../drizzle/db";
+
+dotenv.config();
 
 class EthereumChain {
-  private isTestnet: boolean = false;
+  private isTestnet: boolean;
   protected web3Clients: Web3[];
   protected currentClientIndex: number;
 
@@ -18,23 +22,33 @@ class EthereumChain {
     TRX: "0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5"
   };
 
-  private tokenContracts = this.isTestnet ? this.testTokenContracts : this.mainnetTokenContracts;
+  private tokenContracts: { [key: string]: string };
 
-  constructor() {
-    this.web3Clients = this.isTestnet ? [
-      new Web3("https://sepolia.infura.io/v3/3f10d4c80a19485daef555a0056d8b9e"),
-      new Web3(
-        "https://eth-sepolia.g.alchemy.com/v2/9jzOBc4A-fjjOex_XdDfp-PmBk4rtx-b"
-      ),
-      new Web3("https://go.getblock.io/707ce04f08f7466fad1827d9f5b4a61d")
-    ] : [
-      new Web3("https://mainnet.infura.io/v3/3f10d4c80a19485daef555a0056d8b9e"),
-      new Web3(
-        "https://eth-mainnet.g.alchemy.com/v2/9jzOBc4A-fjjOex_XdDfp-PmBk4rtx-b"
-      ),
-      new Web3("https://go.getblock.io/707ce04f08f7466fad1827d9f5b4a61d")
-    ];
+  constructor(isTestnet: boolean = false) {
+    this.isTestnet = isTestnet;
+    this.tokenContracts = this.isTestnet ? this.testTokenContracts : this.mainnetTokenContracts;
+    this.web3Clients = this.initializeWeb3Clients();
     this.currentClientIndex = 0;
+  }
+
+  private initializeWeb3Clients(): Web3[] {
+    const infuraKey = process.env.INFURA_API_KEY;
+    const alchemyKey = process.env.ALCHEMY_API_KEY;
+    const getblockKey = process.env.GETBLOCK_API_KEY;
+
+    if (!infuraKey || !alchemyKey || !getblockKey) {
+      throw new Error('Missing API keys in environment variables');
+    }
+
+    return this.isTestnet ? [
+      new Web3(`https://sepolia.infura.io/v3/${infuraKey}`),
+      new Web3(`https://eth-sepolia.g.alchemy.com/v2/${alchemyKey}`),
+      new Web3(`https://go.getblock.io/${getblockKey}`)
+    ] : [
+      new Web3(`https://mainnet.infura.io/v3/${infuraKey}`),
+      new Web3(`https://eth-mainnet.g.alchemy.com/v2/${alchemyKey}`),
+      new Web3(`https://go.getblock.io/${getblockKey}`)
+    ];
   }
 
   async getWeb3Client(): Promise<Web3> {
@@ -69,95 +83,113 @@ class EthereumChain {
   }
 
   async processTransactionsByBlock(blockNumber: number): Promise<any> {
-    const client = await this.getWeb3Client();
-    const abi = [
-      {
-        constant: true,
-        inputs: [],
-        name: "name",
-        outputs: [
-          {
-            name: "",
-            type: "string"
-          }
-        ],
-        payable: false,
-        type: "function"
-      },
-      {
-        constant: true,
-        inputs: [],
-        name: "decimals",
-        outputs: [
-          {
-            name: "",
-            type: "uint8"
-          }
-        ],
-        payable: false,
-        type: "function"
-      },
-      {
-        constant: true,
-        inputs: [
-          {
-            name: "_owner",
-            type: "address"
-          }
-        ],
-        name: "balanceOf",
-        outputs: [
-          {
-            name: "balance",
-            type: "uint256"
-          }
-        ],
-        payable: false,
-        type: "function"
-      },
-      {
-        constant: true,
-        inputs: [],
-        name: "symbol",
-        outputs: [
-          {
-            name: "",
-            type: "string"
-          }
-        ],
-        payable: false,
-        type: "function"
-      }
-    ];
-    const block = await client.eth.getBlock(blockNumber, true);
-    if (!block || !block.transactions) {
-      console.error(`Block ${blockNumber} not found or has no transactions`);
-      return;
-    }
+    try {
+      await updateBlockProgress("Ethereum", blockNumber, "processing");
 
-    const transactions = block.transactions;
-    for (const tx of transactions) {
-      if (typeof tx === "object" && tx.to && tx.from) {
-        // Get transaction contract address
-        const contractAddress = this.isTokenContractAddress(tx.to);
-        if(!contractAddress) {
-          continue;
+      const client = await this.getWeb3Client();
+      const abi = [
+        {
+          constant: true,
+          inputs: [],
+          name: "name",
+          outputs: [
+            {
+              name: "",
+              type: "string"
+            }
+          ],
+          payable: false,
+          type: "function"
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: "decimals",
+          outputs: [
+            {
+              name: "",
+              type: "uint8"
+            }
+          ],
+          payable: false,
+          type: "function"
+        },
+        {
+          constant: true,
+          inputs: [
+            {
+              name: "_owner",
+              type: "address"
+            }
+          ],
+          name: "balanceOf",
+          outputs: [
+            {
+              name: "balance",
+              type: "uint256"
+            }
+          ],
+          payable: false,
+          type: "function"
+        },
+        {
+          constant: true,
+          inputs: [],
+          name: "symbol",
+          outputs: [
+            {
+              name: "",
+              type: "string"
+            }
+          ],
+          payable: false,
+          type: "function"
         }
-        const contract = new client.eth.Contract(abi, tx.to);
-        const balance = await contract.methods.balanceOf(tx.from).call();
-        const formattedTx = {
-          block: block.number,
-          txHash: tx.hash,
-          contract: tx.to,
-          from: tx.from,
-          to: tx.to,
-          value: balance,
-          timestamp: block.timestamp,
-          networkName: "Ethereum-Test",
-          transferDirection: "IN"
-        };
-        console.log(formattedTx);
+      ];
+      const block = await client.eth.getBlock(blockNumber, true);
+      if (!block || !block.transactions) {
+        console.error(`Block ${blockNumber} not found or has no transactions`);
+        return;
       }
+
+      const transactions = block.transactions;
+      const processedWallets = new Set<string>();
+
+      for (const tx of transactions) {
+        if (typeof tx === "object" && tx.to && tx.from) {
+          processedWallets.add(tx.from);
+          processedWallets.add(tx.to);
+
+          const contractAddress = this.isTokenContractAddress(tx.to);
+          if(!contractAddress) {
+            continue;
+          }
+          const contract = new client.eth.Contract(abi, tx.to);
+          const balance = await contract.methods.balanceOf(tx.from).call();
+          const formattedTx = {
+            block: block.number,
+            txHash: tx.hash,
+            contract: tx.to,
+            from: tx.from,
+            to: tx.to,
+            value: balance,
+            timestamp: block.timestamp,
+            networkName: "Ethereum-Test",
+            transferDirection: "IN"
+          };
+          console.log(formattedTx);
+
+          // Increment transaction count
+          const date = new Date(Number(block.timestamp) * 1000).toISOString().split('T')[0];
+          await incrementTransactionCount("Ethereum", date);
+        }
+      }
+
+      await updateWalletCount("Ethereum", processedWallets.size);
+      await updateBlockProgress("Ethereum", blockNumber, "processed");
+    } catch (error) {
+      console.error("Error processing Ethereum transactions:", error);
+      await updateBlockProgress("Ethereum", blockNumber, "error", error.message);
     }
   }
 }

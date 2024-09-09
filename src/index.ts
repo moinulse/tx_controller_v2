@@ -1,12 +1,18 @@
 import fastify, { FastifyReply, FastifyRequest } from "fastify";
 import EthereumChain from "./chains/EthereumChain";
 import BinanceSmartChain from "./chains/BinanceSmartChain";
+import SolanaChain from "./chains/SolanaChain";
+import dotenv from 'dotenv';
+import { getBlockProgress, getWalletCount, getTransactionCount24h } from "./drizzle/db";
+
+dotenv.config();
 
 const API_VERSION = "v1";
 
 export const main = async () => {
-  // const eth = new EthereumChain();
-  const bsc = new BinanceSmartChain();
+  const eth = new EthereumChain(process.env.ETH_TESTNET === 'true');
+  const bsc = new BinanceSmartChain(process.env.BSC_TESTNET === 'true');
+  const solana = new SolanaChain(process.env.SOLANA_TESTNET === 'true');
 
   const server = fastify({
     logger: {
@@ -19,12 +25,37 @@ export const main = async () => {
   });
 
   await bsc.processTransactionsByBlock(39873078);
+  // Example of processing a Solana block
+  const latestSolanaBlock = await solana.getLatestBlockNumber();
+  await solana.processTransactionsByBlock(latestSolanaBlock);
 
   // Routes
-  server.post(`/${API_VERSION}/hello`, async (request:FastifyRequest, reply:FastifyReply) => {
-    return { hello: "world" };
+  server.post<{
+    Body: { message: string },
+    Reply: { hello: string }
+  }>(`/${API_VERSION}/hello`, async (request, reply) => {
+    return { hello: request.body.message || "world" };
   });
-  server.listen({ port: 3100 });
+
+  // New API endpoints
+  server.get(`/${API_VERSION}/status`, async (request, reply) => {
+    const status = await getBlockProgress();
+    return { status };
+  });
+
+  server.get(`/${API_VERSION}/blocks`, async (request, reply) => {
+    const blocks = await getBlockProgress();
+    const wallets = await getWalletCount();
+    return { blocks, wallets };
+  });
+
+  server.get(`/${API_VERSION}/transactions`, async (request, reply) => {
+    const transactions = await getTransactionCount24h();
+    return { transactions };
+  });
+
+  const port = parseInt(process.env.PORT || '3100', 10);
+  server.listen({ port, host: '0.0.0.0' });
 
   return server;
 };
