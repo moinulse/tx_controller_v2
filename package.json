@@ -16,7 +16,7 @@
     "dotenv": "^16.4.5",
     "drizzle-orm": "^0.30.9",
     "fastify": "^4.26.2",
-    "tronweb": "^6.0.0-beta.4",
+    "tronweb": "^6.0.0",
     "web3": "^4.8.0"
   },
   "devDependencies": {

@@ -2,6 +2,7 @@ import fastify, { FastifyReply, FastifyRequest } from "fastify";
 import EthereumChain from "./chains/EthereumChain";
 import BinanceSmartChain from "./chains/BinanceSmartChain";
 import SolanaChain from "./chains/SolanaChain";
+import TronChain from "./chains/TronChain";
 import dotenv from 'dotenv';
 import { getBlockProgress, getWalletCount, getTransactionCount24h } from "./drizzle/db";
 
@@ -13,6 +14,7 @@ export const main = async () => {
   const eth = new EthereumChain(process.env.ETH_TESTNET === 'true');
   const bsc = new BinanceSmartChain(process.env.BSC_TESTNET === 'true');
   const solana = new SolanaChain(process.env.SOLANA_TESTNET === 'true');
+  const tron = new TronChain(process.env.TRON_TESTNET === 'true');
 
   const server = fastify({
     logger: {
@@ -28,6 +30,10 @@ export const main = async () => {
   // Example of processing a Solana block
   const latestSolanaBlock = await solana.getLatestBlockNumber();
   await solana.processTransactionsByBlock(latestSolanaBlock);
+
+  // Example of processing a Tron block
+  const latestTronBlock = await tron.getLatestBlockNumber();
+  await tron.processTransactionsByBlock(latestTronBlock);
 
   // Routes
   server.post<{
