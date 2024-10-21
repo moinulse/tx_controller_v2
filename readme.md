@@ -4,13 +4,14 @@
   <img src="https://cryptologos.cc/logos/ethereum-eth-logo.png?v=033" alt="Ethereum" width="100" />
   <img src="https://cryptologos.cc/logos/binance-coin-bnb-logo.png" alt="Binance Smart Chain" width="100" />
   <img src="https://cryptologos.cc/logos/solana-sol-logo.png" alt="Solana" width="100" />
+  <img src="https://cryptologos.cc/logos/tron-trx-logo.png" alt="Tron" width="100" />
 </p>
 
-This project is a scalable blockchain transaction processor that supports Ethereum, Binance Smart Chain, and Solana.
+This project is a scalable blockchain transaction processor that supports Ethereum, Binance Smart Chain, Solana, and Tron.
 
 ## Scalable Features
 
-1. **Multi-chain support**: The application can process transactions from Ethereum, Binance Smart Chain, and Solana, with the ability to easily add more chains in the future.
+1. **Multi-chain support**: The application can process transactions from Ethereum, Binance Smart Chain, Solana, and Tron, with the ability to easily add more chains in the future.
 
 2. **Environment-based configuration**: API keys and network settings are loaded from environment variables, allowing for easy deployment across different environments without code changes.
 
@@ -59,6 +60,7 @@ This project is a scalable blockchain transaction processor that supports Ethere
 - `ETH_TESTNET`: Set to 'true' to use Ethereum testnet, 'false' for mainnet
 - `BSC_TESTNET`: Set to 'true' to use BSC testnet, 'false' for mainnet
 - `SOLANA_TESTNET`: Set to 'true' to use Solana testnet, 'false' for mainnet
+- `TRON_TESTNET`: Set to 'true' to use Tron testnet, 'false' for mainnet
 - `INFURA_API_KEY`: Your Infura API key for Ethereum
 - `ALCHEMY_API_KEY`: Your Alchemy API key for Ethereum
 - `GETBLOCK_API_KEY`: Your GetBlock API key for Ethereum
@@ -66,6 +68,8 @@ This project is a scalable blockchain transaction processor that supports Ethere
 - `BSC_MAINNET_RPC_URL`: (Optional) Custom BSC mainnet RPC URL
 - `SOLANA_TESTNET_RPC_URL`: (Optional) Custom Solana testnet RPC URL
 - `SOLANA_MAINNET_RPC_URL`: (Optional) Custom Solana mainnet RPC URL
+- `TRON_TESTNET_RPC_URL`: (Optional) Custom Tron testnet RPC URL
+- `TRON_MAINNET_RPC_URL`: (Optional) Custom Tron mainnet RPC URL
 
 ## API Endpoints
 
