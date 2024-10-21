@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "generate": "drizzle-kit generate:sqlite",
+    "push": "drizzle-kit push:sqlite",
+    "migrate": "drizzle-kit migrate:sqlite",
+    "studio": "drizzle-kit studio"
   },
   "author": "Moinul Haq",
   "license": "ISC",
@@ -20,9 +24,10 @@
     "web3": "^4.8.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
     "@types/node": "^20.12.7",
     "cli-color": "^2.0.4",
-    "drizzle-kit": "^0.20.17",
+    "drizzle-kit": "^0.20.18",
     "pino-pretty": "^11.0.0",
     "tsx": "^4.7.3",
     "typescript": "^5.4.5"
