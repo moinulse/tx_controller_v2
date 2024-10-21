@@ -1,6 +1,13 @@
-import TronWeb from 'tronweb';
-import dotenv from 'dotenv';
-import { updateBlockProgress, updateWalletCount, incrementTransactionCount } from "../drizzle/db";
+import {
+  TronWeb,
+  utils as TronWebUtils,
+} from "tronweb";
+import dotenv from "dotenv";
+import {
+  updateBlockProgress,
+  updateWalletCount,
+  incrementTransactionCount,
+} from "../drizzle/db";
 
 dotenv.config();
 
@@ -9,29 +16,31 @@ class TronChain {
   private tronWeb: TronWeb;
 
   private mainnetTokenContracts: { [key: string]: string } = {
-    // Add your mainnet Tron token addresses here
+    USDT: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
   };
 
   private testnetTokenContracts: { [key: string]: string } = {
-    // Add your testnet Tron token addresses here
+    USDT: "TXYZopYRdj2D9XRtbG411XZZ3kM5VkAeBf",
   };
 
   private tokenContracts: { [key: string]: string };
 
   constructor(isTestnet: boolean = true) {
     this.isTestnet = isTestnet;
-    this.tokenContracts = this.isTestnet ? this.testnetTokenContracts : this.mainnetTokenContracts;
+    this.tokenContracts = this.isTestnet
+      ? this.testnetTokenContracts
+      : this.mainnetTokenContracts;
     this.tronWeb = this.initializeTronWeb();
   }
 
   private initializeTronWeb(): TronWeb {
     const rpcUrl = this.isTestnet
-      ? process.env.TRON_TESTNET_RPC_URL || 'https://api.shasta.trongrid.io'
-      : process.env.TRON_MAINNET_RPC_URL || 'https://api.trongrid.io';
+      ? process.env.TRON_TESTNET_RPC_URL || "https://nile.trongrid.io/"
+      : process.env.TRON_MAINNET_RPC_URL || "https://api.trongrid.io";
 
     return new TronWeb({
       fullHost: rpcUrl,
-      headers: { "TRON-PRO-API-KEY": process.env.TRON_API_KEY || '' }
+      headers: { "TRON-PRO-API-KEY": process.env.TRON_API_KEY || "" },
     });
   }
 
@@ -66,9 +75,16 @@ class TronChain {
       const processedWallets = new Set<string>();
 
       for (const tx of transactions) {
-        if (tx.raw_data.contract[0].parameter.value.to_address && tx.raw_data.contract[0].parameter.value.owner_address) {
-          const toAddress = this.tronWeb.address.fromHex(tx.raw_data.contract[0].parameter.value.to_address);
-          const fromAddress = this.tronWeb.address.fromHex(tx.raw_data.contract[0].parameter.value.owner_address);
+        if (
+          tx.raw_data.contract[0].parameter.value.to_address &&
+          tx.raw_data.contract[0].parameter.value.owner_address
+        ) {
+          const toAddress = this.tronWeb.address.fromHex(
+            tx.raw_data.contract[0].parameter.value.to_address
+          );
+          const fromAddress = this.tronWeb.address.fromHex(
+            tx.raw_data.contract[0].parameter.value.owner_address
+          );
 
           processedWallets.add(fromAddress);
           processedWallets.add(toAddress);
@@ -83,12 +99,14 @@ class TronChain {
               value: tx.raw_data.contract[0].parameter.value.amount,
               timestamp: block.block_header.raw_data.timestamp,
               networkName: this.isTestnet ? "Tron-Testnet" : "Tron-Mainnet",
-              transferDirection: "IN"
+              transferDirection: "IN",
             };
             console.log(formattedTx);
 
             // Increment transaction count
-            const date = new Date(Number(block.block_header.raw_data.timestamp)).toISOString().split('T')[0];
+            const date = new Date(Number(block.block_header.raw_data.timestamp))
+              .toISOString()
+              .split("T")[0];
             await incrementTransactionCount("Tron", date);
           }
         }
